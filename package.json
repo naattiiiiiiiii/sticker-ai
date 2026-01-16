@@ -2,6 +2,9 @@
   "name": "sticker-ai",
   "version": "1.0.0",
   "description": "AI Sticker Generator for WhatsApp - Free marketplace",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
