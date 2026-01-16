@@ -1,0 +1,78 @@
+// Wrapper para la API de Pollinations.ai
+// 100% gratuito, sin API key, sin límites
+
+const POLLINATIONS_BASE_URL = 'https://image.pollinations.ai/prompt'
+
+interface GenerateOptions {
+  width?: number
+  height?: number
+  seed?: number
+  nologo?: boolean
+  model?: string
+}
+
+export async function generateImage(
+  prompt: string,
+  options: GenerateOptions = {}
+): Promise<Buffer> {
+  const {
+    width = 512,
+    height = 512,
+    seed = Math.floor(Math.random() * 1000000),
+    nologo = true,
+    model = 'flux', // Modelo por defecto
+  } = options
+
+  // Construir URL con parámetros
+  const encodedPrompt = encodeURIComponent(prompt)
+  const params = new URLSearchParams({
+    width: width.toString(),
+    height: height.toString(),
+    seed: seed.toString(),
+    nologo: nologo.toString(),
+    model,
+  })
+
+  const url = `${POLLINATIONS_BASE_URL}/${encodedPrompt}?${params}`
+
+  // Hacer la petición
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Accept': 'image/*',
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error(`Pollinations API error: ${response.status} ${response.statusText}`)
+  }
+
+  // Convertir a Buffer
+  const arrayBuffer = await response.arrayBuffer()
+  return Buffer.from(arrayBuffer)
+}
+
+// Generar URL directa (para preview rápido sin guardar)
+export function getPollinationsUrl(
+  prompt: string,
+  options: GenerateOptions = {}
+): string {
+  const {
+    width = 512,
+    height = 512,
+    seed = Math.floor(Math.random() * 1000000),
+    nologo = true,
+    model = 'flux',
+  } = options
+
+  const encodedPrompt = encodeURIComponent(prompt)
+  const params = new URLSearchParams({
+    width: width.toString(),
+    height: height.toString(),
+    seed: seed.toString(),
+    nologo: nologo.toString(),
+    model,
+  })
+
+  return `${POLLINATIONS_BASE_URL}/${encodedPrompt}?${params}`
+}
