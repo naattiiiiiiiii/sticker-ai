@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getStickerById, incrementDownloads } from '@/lib/supabase'
+import { getStickerById, incrementDownloads } from '@/lib/db'
 
 export async function GET(
   request: NextRequest,
@@ -28,7 +28,7 @@ export async function GET(
     // Incrementar contador de descargas
     await incrementDownloads(id)
 
-    // Descargar la imagen desde Supabase Storage
+    // Descargar la imagen desde Vercel Blob
     const imageResponse = await fetch(sticker.image_url)
 
     if (!imageResponse.ok) {

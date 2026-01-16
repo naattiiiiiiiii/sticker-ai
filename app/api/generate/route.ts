@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { isPromptSafe, sanitizePrompt } from '@/lib/content-filter'
 import { generateImage } from '@/lib/pollinations'
-import { convertToWebPSticker, generateFilename } from '@/lib/image-utils'
-import { createSticker, uploadStickerImage } from '@/lib/supabase'
+import { convertToWebPSticker } from '@/lib/image-utils'
+import { createSticker } from '@/lib/db'
+import { uploadImage, generateFilename } from '@/lib/storage'
 
-// Rate limiting simple (en producción usar Redis/Upstash)
+// Rate limiting simple (en producción usar Vercel KV)
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
 
 function checkRateLimit(ip: string): { allowed: boolean; remaining: number } {
@@ -84,8 +85,8 @@ export async function POST(request: NextRequest) {
     // Generar nombre de archivo único
     const filename = generateFilename()
 
-    // Subir a Supabase Storage
-    const imageUrl = await uploadStickerImage(webpBuffer, filename)
+    // Subir a Vercel Blob
+    const imageUrl = await uploadImage(webpBuffer, filename)
 
     // Guardar en base de datos
     const sticker = await createSticker(prompt, imageUrl)

@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Sparkles, Wand2 } from 'lucide-react'
-import type { Sticker } from '@/lib/supabase'
+import type { Sticker } from '@/lib/db'
 
 interface StickerGeneratorProps {
   onStickerGenerated?: (sticker: Sticker) => void

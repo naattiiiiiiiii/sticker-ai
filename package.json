@@ -7,14 +7,20 @@
     "build": "next build",
     "start": "next start"
   },
-  "keywords": ["stickers", "whatsapp", "ai", "generator"],
+  "keywords": [
+    "stickers",
+    "whatsapp",
+    "ai",
+    "generator"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@supabase/supabase-js": "^2.90.1",
     "@tailwindcss/postcss": "^4.1.18",
     "@types/node": "^22.0.0",
     "@types/react": "^18.3.0",
+    "@vercel/blob": "^2.0.0",
+    "@vercel/postgres": "^0.10.0",
     "autoprefixer": "^10.4.20",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Download } from 'lucide-react'
-import type { Sticker } from '@/lib/supabase'
+import type { Sticker } from '@/lib/db'
 import { WhatsAppModal } from './WhatsAppModal'
 
 interface StickerCardProps {

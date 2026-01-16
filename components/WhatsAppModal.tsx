@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { X, Download, Smartphone, Apple, ExternalLink } from 'lucide-react'
-import type { Sticker } from '@/lib/supabase'
+import type { Sticker } from '@/lib/db'
 import { Button } from '@/components/ui/button'
 
 interface WhatsAppModalProps {
