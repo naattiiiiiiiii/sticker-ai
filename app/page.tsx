@@ -34,10 +34,10 @@ export default function Home() {
           <p className="text-[10px] sm:text-xs font-light tracking-[0.25em] uppercase text-[#9ca3af] mb-4">
             Generador de stickers con IA
           </p>
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-light tracking-tight text-[#1a2634] leading-[1.15] mb-4">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-normal tracking-tight text-[#1a2634] leading-[1.15] mb-4">
             Crea stickers únicos
             <br />
-            <span className="text-[#9ca3af]">para WhatsApp</span>
+            <span className="text-[#4b5563]">para WhatsApp</span>
           </h1>
           <p className="text-sm sm:text-base font-light text-[#6b7280] max-w-md mx-auto leading-relaxed mb-6">
             Describe lo que imaginas y nuestra IA lo convertirá en un sticker.
