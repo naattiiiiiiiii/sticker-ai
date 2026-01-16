@@ -110,6 +110,16 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error generating sticker:', error)
 
+    // More specific error messages
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+
+    if (errorMessage.includes('fetch') || errorMessage.includes('network')) {
+      return NextResponse.json(
+        { error: 'Error de conexión con el servicio de IA. Intenta de nuevo.' },
+        { status: 503 }
+      )
+    }
+
     return NextResponse.json(
       { error: 'Error al generar el sticker. Por favor, intenta de nuevo.' },
       { status: 500 }

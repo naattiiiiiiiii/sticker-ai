@@ -1,6 +1,3 @@
-import { readFileSync, writeFileSync, existsSync } from 'fs'
-import path from 'path'
-
 // Tipos
 export interface Sticker {
   id: string
@@ -12,36 +9,20 @@ export interface Sticker {
 }
 
 // Check if we have Vercel Postgres configured
-const isProduction = process.env.POSTGRES_URL !== undefined
+const hasPostgres = process.env.POSTGRES_URL !== undefined
 
-// JSON file for development persistence
-const DB_FILE = path.join(process.cwd(), 'data', 'stickers.json')
+// In-memory storage for serverless (stickers won't persist between cold starts)
+// This is a fallback when no database is configured
+let memoryStickers: Sticker[] = []
 
-// Load stickers from JSON file
+// Load stickers (from memory in serverless)
 function loadStickers(): Sticker[] {
-  try {
-    if (existsSync(DB_FILE)) {
-      const data = readFileSync(DB_FILE, 'utf-8')
-      return JSON.parse(data)
-    }
-  } catch (error) {
-    console.error('Error loading stickers:', error)
-  }
-  return []
+  return memoryStickers
 }
 
-// Save stickers to JSON file
+// Save stickers (to memory in serverless)
 function saveStickers(stickers: Sticker[]): void {
-  try {
-    const dir = path.dirname(DB_FILE)
-    if (!existsSync(dir)) {
-      const { mkdirSync } = require('fs')
-      mkdirSync(dir, { recursive: true })
-    }
-    writeFileSync(DB_FILE, JSON.stringify(stickers, null, 2))
-  } catch (error) {
-    console.error('Error saving stickers:', error)
-  }
+  memoryStickers = stickers
 }
 
 // Generate UUID
@@ -53,10 +34,10 @@ function generateUUID(): string {
   })
 }
 
-// Crear tabla si no existe (solo para producción)
+// Crear tabla si no existe (solo para producción con Postgres)
 export async function initDatabase() {
-  if (!isProduction) {
-    console.log('Development mode: using JSON file storage')
+  if (!hasPostgres) {
+    console.log('No Postgres configured: using in-memory storage')
     return
   }
 
@@ -83,7 +64,7 @@ export async function initDatabase() {
 
 // Obtener stickers recientes con paginación cursor-based
 export async function getRecentStickers(limit = 20, cursor?: string): Promise<Sticker[]> {
-  if (!isProduction) {
+  if (!hasPostgres) {
     const stickers = loadStickers()
     let sorted = [...stickers].sort((a, b) =>
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -121,7 +102,7 @@ export async function getRecentStickers(limit = 20, cursor?: string): Promise<St
 
 // Obtener sticker por ID
 export async function getStickerById(id: string): Promise<Sticker | null> {
-  if (!isProduction) {
+  if (!hasPostgres) {
     const stickers = loadStickers()
     return stickers.find(s => s.id === id) || null
   }
@@ -135,7 +116,7 @@ export async function getStickerById(id: string): Promise<Sticker | null> {
 
 // Crear nuevo sticker
 export async function createSticker(prompt: string, imageUrl: string): Promise<Sticker> {
-  if (!isProduction) {
+  if (!hasPostgres) {
     const stickers = loadStickers()
     const now = new Date()
     const expires = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
@@ -165,7 +146,7 @@ export async function createSticker(prompt: string, imageUrl: string): Promise<S
 
 // Incrementar descargas
 export async function incrementDownloads(id: string): Promise<void> {
-  if (!isProduction) {
+  if (!hasPostgres) {
     const stickers = loadStickers()
     const sticker = stickers.find(s => s.id === id)
     if (sticker) {
@@ -186,7 +167,7 @@ const MIN_STICKERS = 40
 
 // Eliminar stickers expirados (mantener mínimo MIN_STICKERS)
 export async function deleteExpiredStickers(): Promise<{ deleted: number }> {
-  if (!isProduction) {
+  if (!hasPostgres) {
     const stickers = loadStickers()
     const now = new Date()
 
@@ -239,7 +220,7 @@ export async function deleteExpiredStickers(): Promise<{ deleted: number }> {
 
 // Get total sticker count
 export async function getStickerCount(): Promise<number> {
-  if (!isProduction) {
+  if (!hasPostgres) {
     return loadStickers().length
   }
 
