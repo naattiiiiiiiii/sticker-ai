@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getStickerById, incrementDownloads } from '@/lib/db'
+import { readFile } from 'fs/promises'
+import path from 'path'
 
 export async function GET(
   request: NextRequest,
@@ -28,14 +30,24 @@ export async function GET(
     // Incrementar contador de descargas
     await incrementDownloads(id)
 
-    // Descargar la imagen desde Vercel Blob
-    const imageResponse = await fetch(sticker.image_url)
+    let imageBuffer: ArrayBuffer
 
-    if (!imageResponse.ok) {
-      throw new Error('Error fetching image from storage')
+    // Check if it's a local file (development) or remote URL (production)
+    if (sticker.image_url.startsWith('/uploads/')) {
+      // Local file - read from disk
+      const localPath = path.join(process.cwd(), 'public', sticker.image_url)
+      const buffer = await readFile(localPath)
+      imageBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength)
+    } else {
+      // Remote URL - fetch from Vercel Blob
+      const imageResponse = await fetch(sticker.image_url)
+
+      if (!imageResponse.ok) {
+        throw new Error('Error fetching image from storage')
+      }
+
+      imageBuffer = await imageResponse.arrayBuffer()
     }
-
-    const imageBuffer = await imageResponse.arrayBuffer()
 
     // Devolver la imagen como descarga
     return new NextResponse(imageBuffer, {

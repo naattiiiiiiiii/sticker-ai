@@ -17,7 +17,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         disabled={disabled || loading}
         className={cn(
           'rounded-full font-light tracking-wide transition-all duration-300 inline-flex items-center justify-center',
-          'focus:outline-none focus:ring-2 focus:ring-[#1a2634] focus:ring-offset-2 focus:ring-offset-[#faf8f5]',
+          'focus:outline-none focus-visible:ring-1 focus-visible:ring-[#1a2634] focus-visible:ring-offset-2 focus-visible:ring-offset-[#faf8f5]',
           'disabled:opacity-50 disabled:cursor-not-allowed',
           {
             'border border-[#1a2634] bg-transparent text-[#1a2634] hover:bg-[#1a2634] hover:text-white':
@@ -27,8 +27,8 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             'bg-transparent text-[#6b7280] hover:text-[#1a2634]':
               variant === 'ghost',
             'px-4 py-2 text-sm': size === 'sm',
-            'px-6 py-3 text-base': size === 'md',
-            'px-8 py-4 text-lg': size === 'lg',
+            'px-6 py-3 text-sm': size === 'md',
+            'px-8 py-4 text-base': size === 'lg',
           },
           className
         )}

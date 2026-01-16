@@ -76,10 +76,10 @@ export function isPromptSafe(prompt: string): { safe: boolean; reason?: string }
     }
   }
 
-  if (normalized.length > 500) {
+  if (normalized.length > 200) {
     return {
       safe: false,
-      reason: 'El prompt es demasiado largo. Máximo 500 caracteres.',
+      reason: 'El prompt es demasiado largo. Máximo 200 caracteres.',
     }
   }
 
@@ -91,8 +91,9 @@ export function sanitizePrompt(prompt: string): string {
   const cleaned = prompt
     .trim()
     .replace(/\s+/g, ' ') // Múltiples espacios a uno
-    .slice(0, 500) // Limitar longitud
+    .slice(0, 200) // Limitar longitud
 
-  // Añadir contexto de sticker para mejores resultados
-  return `cute sticker design, ${cleaned}, simple flat illustration, white background, cartoon style, emoji style, kawaii, vector art, no text`
+  // Prompt mínimo - solo lo necesario para que sea un sticker
+  // Dejamos que el usuario defina el estilo libremente
+  return `${cleaned}, sticker, white background, centered, high quality`
 }

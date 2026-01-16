@@ -36,3 +36,7 @@ next-env.d.ts
 # IDE
 .idea/
 .vscode/
+
+# Local development data
+data/
+public/uploads/

@@ -1,4 +1,5 @@
-import { sql } from '@vercel/postgres'
+import { readFileSync, writeFileSync, existsSync } from 'fs'
+import path from 'path'
 
 // Tipos
 export interface Sticker {
@@ -10,8 +11,57 @@ export interface Sticker {
   expires_at: string
 }
 
-// Crear tabla si no existe (ejecutar una vez en setup)
+// Check if we have Vercel Postgres configured
+const isProduction = process.env.POSTGRES_URL !== undefined
+
+// JSON file for development persistence
+const DB_FILE = path.join(process.cwd(), 'data', 'stickers.json')
+
+// Load stickers from JSON file
+function loadStickers(): Sticker[] {
+  try {
+    if (existsSync(DB_FILE)) {
+      const data = readFileSync(DB_FILE, 'utf-8')
+      return JSON.parse(data)
+    }
+  } catch (error) {
+    console.error('Error loading stickers:', error)
+  }
+  return []
+}
+
+// Save stickers to JSON file
+function saveStickers(stickers: Sticker[]): void {
+  try {
+    const dir = path.dirname(DB_FILE)
+    if (!existsSync(dir)) {
+      const { mkdirSync } = require('fs')
+      mkdirSync(dir, { recursive: true })
+    }
+    writeFileSync(DB_FILE, JSON.stringify(stickers, null, 2))
+  } catch (error) {
+    console.error('Error saving stickers:', error)
+  }
+}
+
+// Generate UUID
+function generateUUID(): string {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0
+    const v = c === 'x' ? r : (r & 0x3 | 0x8)
+    return v.toString(16)
+  })
+}
+
+// Crear tabla si no existe (solo para producción)
 export async function initDatabase() {
+  if (!isProduction) {
+    console.log('Development mode: using JSON file storage')
+    return
+  }
+
+  const { sql } = await import('@vercel/postgres')
+
   await sql`
     CREATE TABLE IF NOT EXISTS stickers (
       id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -23,7 +73,6 @@ export async function initDatabase() {
     )
   `
 
-  // Crear índices
   await sql`
     CREATE INDEX IF NOT EXISTS idx_stickers_created_at ON stickers(created_at DESC)
   `
@@ -34,6 +83,24 @@ export async function initDatabase() {
 
 // Obtener stickers recientes con paginación cursor-based
 export async function getRecentStickers(limit = 20, cursor?: string): Promise<Sticker[]> {
+  if (!isProduction) {
+    const stickers = loadStickers()
+    let sorted = [...stickers].sort((a, b) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    )
+
+    if (cursor) {
+      const cursorIndex = sorted.findIndex(s => s.created_at === cursor)
+      if (cursorIndex !== -1) {
+        sorted = sorted.slice(cursorIndex + 1)
+      }
+    }
+
+    return sorted.slice(0, limit)
+  }
+
+  const { sql } = await import('@vercel/postgres')
+
   if (cursor) {
     const { rows } = await sql`
       SELECT * FROM stickers
@@ -54,6 +121,12 @@ export async function getRecentStickers(limit = 20, cursor?: string): Promise<St
 
 // Obtener sticker por ID
 export async function getStickerById(id: string): Promise<Sticker | null> {
+  if (!isProduction) {
+    const stickers = loadStickers()
+    return stickers.find(s => s.id === id) || null
+  }
+
+  const { sql } = await import('@vercel/postgres')
   const { rows } = await sql`
     SELECT * FROM stickers WHERE id = ${id}
   `
@@ -62,6 +135,26 @@ export async function getStickerById(id: string): Promise<Sticker | null> {
 
 // Crear nuevo sticker
 export async function createSticker(prompt: string, imageUrl: string): Promise<Sticker> {
+  if (!isProduction) {
+    const stickers = loadStickers()
+    const now = new Date()
+    const expires = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+
+    const sticker: Sticker = {
+      id: generateUUID(),
+      prompt,
+      image_url: imageUrl,
+      downloads: 0,
+      created_at: now.toISOString(),
+      expires_at: expires.toISOString(),
+    }
+
+    stickers.push(sticker)
+    saveStickers(stickers)
+    return sticker
+  }
+
+  const { sql } = await import('@vercel/postgres')
   const { rows } = await sql`
     INSERT INTO stickers (prompt, image_url)
     VALUES (${prompt}, ${imageUrl})
@@ -72,15 +165,85 @@ export async function createSticker(prompt: string, imageUrl: string): Promise<S
 
 // Incrementar descargas
 export async function incrementDownloads(id: string): Promise<void> {
+  if (!isProduction) {
+    const stickers = loadStickers()
+    const sticker = stickers.find(s => s.id === id)
+    if (sticker) {
+      sticker.downloads++
+      saveStickers(stickers)
+    }
+    return
+  }
+
+  const { sql } = await import('@vercel/postgres')
   await sql`
     UPDATE stickers SET downloads = downloads + 1 WHERE id = ${id}
   `
 }
 
-// Eliminar stickers expirados
+// Minimum number of stickers to keep in the gallery
+const MIN_STICKERS = 40
+
+// Eliminar stickers expirados (mantener mínimo MIN_STICKERS)
 export async function deleteExpiredStickers(): Promise<{ deleted: number }> {
+  if (!isProduction) {
+    const stickers = loadStickers()
+    const now = new Date()
+
+    // Sort by created_at descending (newest first)
+    const sorted = [...stickers].sort((a, b) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    )
+
+    // Keep at least MIN_STICKERS, only delete expired ones beyond that
+    const toKeep: Sticker[] = []
+    const toDelete: Sticker[] = []
+
+    sorted.forEach((sticker, index) => {
+      const isExpired = new Date(sticker.expires_at) < now
+      // Keep if: not expired OR we haven't reached minimum yet
+      if (!isExpired || toKeep.length < MIN_STICKERS) {
+        toKeep.push(sticker)
+      } else {
+        toDelete.push(sticker)
+      }
+    })
+
+    saveStickers(toKeep)
+    return { deleted: toDelete.length }
+  }
+
+  const { sql } = await import('@vercel/postgres')
+
+  // First, count total stickers
+  const { rows: countRows } = await sql`SELECT COUNT(*) as count FROM stickers`
+  const totalCount = parseInt(countRows[0].count)
+
+  // Only delete if we have more than minimum
+  if (totalCount <= MIN_STICKERS) {
+    return { deleted: 0 }
+  }
+
+  // Delete expired stickers but keep at least MIN_STICKERS
   const { rowCount } = await sql`
-    DELETE FROM stickers WHERE expires_at < NOW()
+    DELETE FROM stickers
+    WHERE id IN (
+      SELECT id FROM stickers
+      WHERE expires_at < NOW()
+      ORDER BY created_at ASC
+      LIMIT ${totalCount - MIN_STICKERS}
+    )
   `
   return { deleted: rowCount || 0 }
+}
+
+// Get total sticker count
+export async function getStickerCount(): Promise<number> {
+  if (!isProduction) {
+    return loadStickers().length
+  }
+
+  const { sql } = await import('@vercel/postgres')
+  const { rows } = await sql`SELECT COUNT(*) as count FROM stickers`
+  return parseInt(rows[0].count)
 }

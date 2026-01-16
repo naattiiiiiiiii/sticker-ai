@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { StickerCard } from './StickerCard'
 import { Button } from '@/components/ui/button'
 import { Loader2 } from 'lucide-react'
@@ -16,6 +16,21 @@ export function StickerGrid({ initialStickers = [] }: StickerGridProps) {
   const [hasMore, setHasMore] = useState(true)
   const [cursor, setCursor] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const initialLoadDone = useRef(false)
+
+  // Listen for new sticker events
+  useEffect(() => {
+    const handleNewSticker = (event: CustomEvent<Sticker>) => {
+      setStickers(prev => {
+        // Add new sticker at the beginning if not already present
+        if (prev.some(s => s.id === event.detail.id)) return prev
+        return [event.detail, ...prev]
+      })
+    }
+
+    window.addEventListener('newSticker', handleNewSticker as EventListener)
+    return () => window.removeEventListener('newSticker', handleNewSticker as EventListener)
+  }, [])
 
   const loadMore = useCallback(async () => {
     if (loading || !hasMore) return
@@ -34,7 +49,13 @@ export function StickerGrid({ initialStickers = [] }: StickerGridProps) {
         throw new Error(data.error || 'Error cargando stickers')
       }
 
-      setStickers((prev) => [...prev, ...data.stickers])
+      // Use functional update to avoid stale closures
+      setStickers((prev) => {
+        // Filter out duplicates by ID
+        const existingIds = new Set(prev.map(s => s.id))
+        const newStickers = data.stickers.filter((s: Sticker) => !existingIds.has(s.id))
+        return [...prev, ...newStickers]
+      })
       setCursor(data.nextCursor)
       setHasMore(data.hasMore)
     } catch (err) {
@@ -44,20 +65,21 @@ export function StickerGrid({ initialStickers = [] }: StickerGridProps) {
     }
   }, [cursor, hasMore, loading])
 
-  // Cargar inicial
+  // Initial load - only runs once
   useEffect(() => {
-    if (initialStickers.length === 0) {
+    if (initialStickers.length === 0 && !initialLoadDone.current) {
+      initialLoadDone.current = true
       loadMore()
     }
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Intersection Observer para infinite scroll
+  // Infinite scroll observer
   useEffect(() => {
     if (!hasMore || loading) return
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting) {
+        if (entries[0].isIntersecting && !loading) {
           loadMore()
         }
       },
@@ -71,47 +93,36 @@ export function StickerGrid({ initialStickers = [] }: StickerGridProps) {
   }, [hasMore, loading, loadMore])
 
   if (stickers.length === 0 && !loading) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-[#6b7280] font-light">
-          Aún no hay stickers. ¡Crea el primero!
-        </p>
-      </div>
-    )
+    return null
   }
 
   return (
     <div>
-      {/* Grid responsive */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
         {stickers.map((sticker) => (
           <StickerCard key={sticker.id} sticker={sticker} />
         ))}
       </div>
 
-      {/* Sentinel para infinite scroll */}
       <div id="load-more-sentinel" className="h-4" />
 
-      {/* Loading */}
       {loading && (
-        <div className="flex justify-center py-8">
-          <Loader2 className="w-6 h-6 text-[#6b7280] animate-spin" />
+        <div className="flex justify-center py-8 sm:py-12">
+          <Loader2 className="w-5 h-5 text-[#9ca3af] animate-spin" />
         </div>
       )}
 
-      {/* Error */}
       {error && (
-        <div className="text-center py-8">
-          <p className="text-red-500 text-sm mb-4">{error}</p>
+        <div className="text-center py-8 sm:py-12">
+          <p className="text-red-500 text-sm font-light mb-4">{error}</p>
           <Button onClick={loadMore} variant="primary" size="sm">
             Reintentar
           </Button>
         </div>
       )}
 
-      {/* Fin del contenido */}
       {!hasMore && stickers.length > 0 && (
-        <p className="text-center text-[#9ca3af] text-sm py-8">
+        <p className="text-center text-[#9ca3af] text-xs sm:text-sm font-light py-8 sm:py-12">
           Has visto todos los stickers
         </p>
       )}

@@ -8,61 +8,61 @@ export const metadata: Metadata = {
   description: 'Explora todos los stickers creados por la comunidad. Descarga gratis para WhatsApp.',
 }
 
-export const revalidate = 60 // ISR: revalidar cada 60 segundos
+export const revalidate = 60
 
 export default function GalleryPage() {
   return (
     <div className="min-h-screen bg-[#faf8f5]">
       {/* Header */}
       <header className="px-6 sm:px-8 lg:px-16 py-6 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2">
-          <Sparkles className="w-6 h-6 text-[#1a2634]" strokeWidth={1.5} />
+        <Link href="/" className="flex items-center gap-2 group">
+          <Sparkles className="w-5 h-5 text-[#1a2634] group-hover:-rotate-12 transition-transform duration-300" strokeWidth={1.5} />
           <span className="text-lg font-light tracking-wide text-[#1a2634]">
             StickerAI
           </span>
         </Link>
         <Link
           href="/"
-          className="text-sm font-light text-[#6b7280] hover:text-[#1a2634]
-            transition-colors duration-300 flex items-center gap-1"
+          className="group flex items-center gap-1.5 text-sm font-light text-[#6b7280] hover:text-[#1a2634] transition-colors duration-300"
         >
-          <ArrowLeft className="w-4 h-4" strokeWidth={1.5} />
+          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform duration-300" strokeWidth={1.5} />
           Crear sticker
         </Link>
       </header>
 
       {/* Título */}
-      <section className="px-6 sm:px-8 lg:px-16 py-8 sm:py-12">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-light text-[#1a2634] tracking-tight">
+      <section className="px-6 sm:px-8 lg:px-16 py-12 sm:py-16">
+        <div className="max-w-5xl mx-auto">
+          <p className="text-xs font-light tracking-[0.25em] uppercase text-[#9ca3af] mb-2">
+            Comunidad
+          </p>
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-light tracking-tight text-[#1a2634]">
             Galería de Stickers
           </h1>
-          <p className="mt-4 text-lg text-[#6b7280] font-light">
+          <p className="mt-4 text-base font-light text-[#6b7280]">
             Explora los stickers creados por la comunidad
           </p>
         </div>
       </section>
 
-      {/* Grid de stickers */}
-      <section className="px-6 sm:px-8 lg:px-16 pb-16">
-        <div className="max-w-7xl mx-auto">
+      {/* Grid */}
+      <section className="px-6 sm:px-8 lg:px-16 pb-20">
+        <div className="max-w-5xl mx-auto">
           <StickerGrid />
         </div>
       </section>
 
       {/* Footer */}
       <footer className="px-6 sm:px-8 lg:px-16 py-8 border-t border-[#e5e7eb]">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-[#9ca3af]" strokeWidth={1.5} />
+            <Sparkles className="w-4 h-4 text-[#9ca3af]" strokeWidth={1.5} />
             <span className="text-sm font-light text-[#9ca3af]">
-              StickerAI — Hecho con IA
+              StickerAI
             </span>
           </div>
-          <p className="text-xs text-[#9ca3af] text-center sm:text-right">
-            Los stickers se eliminan después de 30 días.
-            <br className="sm:hidden" />
-            {' '}No almacenamos datos personales.
+          <p className="text-xs font-light text-[#9ca3af] text-center sm:text-right">
+            Los stickers se eliminan después de 30 días. Sin datos personales.
           </p>
         </div>
       </footer>
