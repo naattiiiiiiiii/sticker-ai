@@ -35,21 +35,35 @@ export async function generateImage(
 
   const url = `${POLLINATIONS_BASE_URL}/${encodedPrompt}?${params}`
 
-  // Hacer la petición
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: {
-      'Accept': 'image/*',
-    },
-  })
+  // Hacer la petición con timeout de 60 segundos
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 60000)
 
-  if (!response.ok) {
-    throw new Error(`Pollinations API error: ${response.status} ${response.statusText}`)
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': 'image/*',
+      },
+      signal: controller.signal,
+    })
+
+    clearTimeout(timeout)
+
+    if (!response.ok) {
+      throw new Error(`Pollinations API error: ${response.status} ${response.statusText}`)
+    }
+
+    // Convertir a Buffer
+    const arrayBuffer = await response.arrayBuffer()
+    return Buffer.from(arrayBuffer)
+  } catch (error) {
+    clearTimeout(timeout)
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('Timeout: La generación de imagen tardó demasiado. Intenta de nuevo.')
+    }
+    throw error
   }
-
-  // Convertir a Buffer
-  const arrayBuffer = await response.arrayBuffer()
-  return Buffer.from(arrayBuffer)
 }
 
 // Generar URL directa (para preview rápido sin guardar)

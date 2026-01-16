@@ -1,34 +1,12 @@
-import { mkdir, writeFile, unlink } from 'fs/promises'
-import path from 'path'
-
 // Check if we have Vercel Blob configured
-const isProduction = process.env.BLOB_READ_WRITE_TOKEN !== undefined
-
-// Local storage directory for development
-const LOCAL_STORAGE_DIR = path.join(process.cwd(), 'public', 'uploads')
-
-// Ensure local storage directory exists
-async function ensureLocalDir() {
-  try {
-    await mkdir(LOCAL_STORAGE_DIR, { recursive: true })
-  } catch (error) {
-    // Directory might already exist
-  }
-}
+const hasBlobStorage = process.env.BLOB_READ_WRITE_TOKEN !== undefined
 
 // Subir imagen al blob storage
 export async function uploadImage(buffer: Buffer, filename: string): Promise<string> {
-  if (!isProduction) {
-    // Development: save locally
-    await ensureLocalDir()
-
-    const localFilename = filename.replace('stickers/', '')
-    const localPath = path.join(LOCAL_STORAGE_DIR, localFilename)
-
-    await writeFile(localPath, buffer)
-
-    // Return local URL
-    return `/uploads/${localFilename}`
+  if (!hasBlobStorage) {
+    // No blob storage: return as base64 data URL
+    const base64 = buffer.toString('base64')
+    return `data:image/webp;base64,${base64}`
   }
 
   // Production: use Vercel Blob
@@ -44,15 +22,8 @@ export async function uploadImage(buffer: Buffer, filename: string): Promise<str
 
 // Eliminar imagen del blob storage
 export async function deleteImage(url: string): Promise<void> {
-  if (!isProduction) {
-    // Development: delete local file
-    try {
-      const filename = url.replace('/uploads/', '')
-      const localPath = path.join(LOCAL_STORAGE_DIR, filename)
-      await unlink(localPath)
-    } catch (error) {
-      console.error('Error deleting local image:', error)
-    }
+  if (!hasBlobStorage || url.startsWith('data:')) {
+    // No blob storage or data URL: nothing to delete
     return
   }
 
