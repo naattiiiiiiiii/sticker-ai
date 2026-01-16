@@ -5,6 +5,9 @@ import { convertToWebPSticker } from '@/lib/image-utils'
 import { createSticker, getStickerCount } from '@/lib/db'
 import { uploadImage, generateFilename } from '@/lib/storage'
 
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 // Varied prompts for seed stickers - different styles and themes
 const SEED_PROMPTS = [
   // Animals

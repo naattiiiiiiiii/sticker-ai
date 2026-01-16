@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getStickerById, incrementDownloads } from '@/lib/db'
-import { readFile } from 'fs/promises'
-import path from 'path'
+
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
 
 export async function GET(
   request: NextRequest,
@@ -32,12 +33,16 @@ export async function GET(
 
     let imageBuffer: ArrayBuffer
 
-    // Check if it's a local file (development) or remote URL (production)
-    if (sticker.image_url.startsWith('/uploads/')) {
-      // Local file - read from disk
-      const localPath = path.join(process.cwd(), 'public', sticker.image_url)
-      const buffer = await readFile(localPath)
-      imageBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength)
+    // Check the image URL type
+    if (sticker.image_url.startsWith('data:')) {
+      // Base64 data URL - decode it
+      const base64Data = sticker.image_url.split(',')[1]
+      const binaryString = atob(base64Data)
+      const bytes = new Uint8Array(binaryString.length)
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i)
+      }
+      imageBuffer = bytes.buffer
     } else {
       // Remote URL - fetch from Vercel Blob
       const imageResponse = await fetch(sticker.image_url)

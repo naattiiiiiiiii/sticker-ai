@@ -12,6 +12,10 @@ const nextConfig = {
       },
     ],
   },
+  // Sharp needs to be external for Vercel serverless
+  experimental: {
+    serverComponentsExternalPackages: ['sharp'],
+  },
 }
 
 module.exports = nextConfig
