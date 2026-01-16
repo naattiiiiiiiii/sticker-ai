@@ -1,28 +1,53 @@
 import sharp from 'sharp'
 
 // Convertir imagen a WebP optimizado para WhatsApp stickers
-// Requisitos: 512x512, < 100KB, fondo transparente opcional
+// Requisitos: 512x512, < 100KB, fondo transparente
 export async function convertToWebPSticker(
   inputBuffer: Buffer,
   options: {
-    removeBackground?: boolean
     quality?: number
   } = {}
 ): Promise<Buffer> {
-  const { quality = 80 } = options
+  const { quality = 85 } = options
 
-  let image = sharp(inputBuffer)
+  // Primero, obtener los datos raw de la imagen para hacer el fondo transparente
+  const image = sharp(inputBuffer)
+  const metadata = await image.metadata()
 
-  // Redimensionar a 512x512 manteniendo aspecto y rellenando con transparente
-  image = image
+  // Procesar la imagen: convertir fondo blanco/casi-blanco a transparente
+  let processedBuffer = await sharp(inputBuffer)
+    .ensureAlpha() // Asegurar canal alpha
+    .raw()
+    .toBuffer({ resolveWithObject: true })
+
+  const { data, info } = processedBuffer
+
+  // Reemplazar píxeles blancos/casi-blancos con transparentes
+  // Threshold: si R, G, B > 240, hacerlo transparente
+  const threshold = 240
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i]
+    const g = data[i + 1]
+    const b = data[i + 2]
+
+    // Si el pixel es muy claro (casi blanco), hacerlo transparente
+    if (r > threshold && g > threshold && b > threshold) {
+      data[i + 3] = 0 // Alpha = 0 (transparente)
+    }
+  }
+
+  // Reconstruir imagen desde raw data
+  let webpBuffer = await sharp(data, {
+    raw: {
+      width: info.width,
+      height: info.height,
+      channels: 4
+    }
+  })
     .resize(512, 512, {
       fit: 'contain',
-      background: { r: 255, g: 255, b: 255, alpha: 0 },
+      background: { r: 0, g: 0, b: 0, alpha: 0 }, // Fondo transparente
     })
-    .flatten({ background: { r: 255, g: 255, b: 255 } }) // Fondo blanco para stickers
-
-  // Convertir a WebP con compresión
-  let webpBuffer = await image
     .webp({
       quality,
       alphaQuality: 100,
@@ -32,14 +57,19 @@ export async function convertToWebPSticker(
 
   // Si el archivo es > 100KB, reducir calidad iterativamente
   let currentQuality = quality
-  while (webpBuffer.length > 100 * 1024 && currentQuality > 20) {
+  while (webpBuffer.length > 100 * 1024 && currentQuality > 30) {
     currentQuality -= 10
-    webpBuffer = await sharp(inputBuffer)
+    webpBuffer = await sharp(data, {
+      raw: {
+        width: info.width,
+        height: info.height,
+        channels: 4
+      }
+    })
       .resize(512, 512, {
         fit: 'contain',
-        background: { r: 255, g: 255, b: 255, alpha: 0 },
+        background: { r: 0, g: 0, b: 0, alpha: 0 },
       })
-      .flatten({ background: { r: 255, g: 255, b: 255 } })
       .webp({
         quality: currentQuality,
         alphaQuality: 100,

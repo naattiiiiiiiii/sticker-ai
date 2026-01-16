@@ -1,0 +1,9 @@
+# robots.txt for StickerAI
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://sticker-ai.vercel.app/sitemap.xml
+
+# Disallow API routes from indexing
+Disallow: /api/

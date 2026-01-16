@@ -11,7 +11,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
       <input
         type={type}
         className={cn(
-          'w-full rounded-full border border-[#e5e7eb] bg-transparent',
+          'w-full rounded-full border border-[#e5e7eb] bg-white/50',
           'px-6 py-4 font-light text-[#1a2634]',
           'placeholder:text-[#9ca3af]',
           'focus:border-[#1a2634] focus:outline-none',
