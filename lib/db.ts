@@ -1,3 +1,5 @@
+import { neon } from '@neondatabase/serverless'
+
 // Tipos
 export interface Sticker {
   id: string
@@ -8,22 +10,19 @@ export interface Sticker {
   expires_at: string
 }
 
-// Check if we have Vercel Postgres configured
-const hasPostgres = process.env.POSTGRES_URL !== undefined
+// Check if we have Neon configured
+const hasDatabase = process.env.DATABASE_URL !== undefined
 
-// In-memory storage for serverless (stickers won't persist between cold starts)
-// This is a fallback when no database is configured
+// Get SQL client
+function getSQL() {
+  if (!hasDatabase) {
+    throw new Error('DATABASE_URL not configured')
+  }
+  return neon(process.env.DATABASE_URL!)
+}
+
+// In-memory fallback when no database
 let memoryStickers: Sticker[] = []
-
-// Load stickers (from memory in serverless)
-function loadStickers(): Sticker[] {
-  return memoryStickers
-}
-
-// Save stickers (to memory in serverless)
-function saveStickers(stickers: Sticker[]): void {
-  memoryStickers = stickers
-}
 
 // Generate UUID
 function generateUUID(): string {
@@ -34,14 +33,14 @@ function generateUUID(): string {
   })
 }
 
-// Crear tabla si no existe (solo para producción con Postgres)
+// Crear tabla si no existe
 export async function initDatabase() {
-  if (!hasPostgres) {
-    console.log('No Postgres configured: using in-memory storage')
+  if (!hasDatabase) {
+    console.log('No database configured: using in-memory storage')
     return
   }
 
-  const { sql } = await import('@vercel/postgres')
+  const sql = getSQL()
 
   await sql`
     CREATE TABLE IF NOT EXISTS stickers (
@@ -57,33 +56,25 @@ export async function initDatabase() {
   await sql`
     CREATE INDEX IF NOT EXISTS idx_stickers_created_at ON stickers(created_at DESC)
   `
-  await sql`
-    CREATE INDEX IF NOT EXISTS idx_stickers_expires_at ON stickers(expires_at)
-  `
 }
 
-// Obtener stickers recientes con paginación cursor-based
+// Obtener stickers recientes
 export async function getRecentStickers(limit = 20, cursor?: string): Promise<Sticker[]> {
-  if (!hasPostgres) {
-    const stickers = loadStickers()
-    let sorted = [...stickers].sort((a, b) =>
+  if (!hasDatabase) {
+    let sorted = [...memoryStickers].sort((a, b) =>
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     )
-
     if (cursor) {
-      const cursorIndex = sorted.findIndex(s => s.created_at === cursor)
-      if (cursorIndex !== -1) {
-        sorted = sorted.slice(cursorIndex + 1)
-      }
+      const idx = sorted.findIndex(s => s.created_at === cursor)
+      if (idx !== -1) sorted = sorted.slice(idx + 1)
     }
-
     return sorted.slice(0, limit)
   }
 
-  const { sql } = await import('@vercel/postgres')
+  const sql = getSQL()
 
   if (cursor) {
-    const { rows } = await sql`
+    const rows = await sql`
       SELECT * FROM stickers
       WHERE created_at < ${cursor}
       ORDER BY created_at DESC
@@ -92,7 +83,7 @@ export async function getRecentStickers(limit = 20, cursor?: string): Promise<St
     return rows as Sticker[]
   }
 
-  const { rows } = await sql`
+  const rows = await sql`
     SELECT * FROM stickers
     ORDER BY created_at DESC
     LIMIT ${limit}
@@ -102,41 +93,33 @@ export async function getRecentStickers(limit = 20, cursor?: string): Promise<St
 
 // Obtener sticker por ID
 export async function getStickerById(id: string): Promise<Sticker | null> {
-  if (!hasPostgres) {
-    const stickers = loadStickers()
-    return stickers.find(s => s.id === id) || null
+  if (!hasDatabase) {
+    return memoryStickers.find(s => s.id === id) || null
   }
 
-  const { sql } = await import('@vercel/postgres')
-  const { rows } = await sql`
-    SELECT * FROM stickers WHERE id = ${id}
-  `
+  const sql = getSQL()
+  const rows = await sql`SELECT * FROM stickers WHERE id = ${id}`
   return rows[0] as Sticker | null
 }
 
 // Crear nuevo sticker
 export async function createSticker(prompt: string, imageUrl: string): Promise<Sticker> {
-  if (!hasPostgres) {
-    const stickers = loadStickers()
+  if (!hasDatabase) {
     const now = new Date()
-    const expires = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
-
     const sticker: Sticker = {
       id: generateUUID(),
       prompt,
       image_url: imageUrl,
       downloads: 0,
       created_at: now.toISOString(),
-      expires_at: expires.toISOString(),
+      expires_at: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     }
-
-    stickers.push(sticker)
-    saveStickers(stickers)
+    memoryStickers.push(sticker)
     return sticker
   }
 
-  const { sql } = await import('@vercel/postgres')
-  const { rows } = await sql`
+  const sql = getSQL()
+  const rows = await sql`
     INSERT INTO stickers (prompt, image_url)
     VALUES (${prompt}, ${imageUrl})
     RETURNING *
@@ -146,67 +129,48 @@ export async function createSticker(prompt: string, imageUrl: string): Promise<S
 
 // Incrementar descargas
 export async function incrementDownloads(id: string): Promise<void> {
-  if (!hasPostgres) {
-    const stickers = loadStickers()
-    const sticker = stickers.find(s => s.id === id)
-    if (sticker) {
-      sticker.downloads++
-      saveStickers(stickers)
-    }
+  if (!hasDatabase) {
+    const sticker = memoryStickers.find(s => s.id === id)
+    if (sticker) sticker.downloads++
     return
   }
 
-  const { sql } = await import('@vercel/postgres')
-  await sql`
-    UPDATE stickers SET downloads = downloads + 1 WHERE id = ${id}
-  `
+  const sql = getSQL()
+  await sql`UPDATE stickers SET downloads = downloads + 1 WHERE id = ${id}`
 }
 
-// Minimum number of stickers to keep in the gallery
+// Minimum stickers to keep
 const MIN_STICKERS = 40
 
-// Eliminar stickers expirados (mantener mínimo MIN_STICKERS)
+// Eliminar stickers expirados
 export async function deleteExpiredStickers(): Promise<{ deleted: number }> {
-  if (!hasPostgres) {
-    const stickers = loadStickers()
+  if (!hasDatabase) {
     const now = new Date()
-
-    // Sort by created_at descending (newest first)
-    const sorted = [...stickers].sort((a, b) =>
+    const sorted = [...memoryStickers].sort((a, b) =>
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     )
-
-    // Keep at least MIN_STICKERS, only delete expired ones beyond that
     const toKeep: Sticker[] = []
-    const toDelete: Sticker[] = []
-
-    sorted.forEach((sticker, index) => {
+    sorted.forEach(sticker => {
       const isExpired = new Date(sticker.expires_at) < now
-      // Keep if: not expired OR we haven't reached minimum yet
       if (!isExpired || toKeep.length < MIN_STICKERS) {
         toKeep.push(sticker)
-      } else {
-        toDelete.push(sticker)
       }
     })
-
-    saveStickers(toKeep)
-    return { deleted: toDelete.length }
+    const deleted = memoryStickers.length - toKeep.length
+    memoryStickers = toKeep
+    return { deleted }
   }
 
-  const { sql } = await import('@vercel/postgres')
+  const sql = getSQL()
 
-  // First, count total stickers
-  const { rows: countRows } = await sql`SELECT COUNT(*) as count FROM stickers`
-  const totalCount = parseInt(countRows[0].count)
+  const countResult = await sql`SELECT COUNT(*) as count FROM stickers`
+  const totalCount = parseInt(countResult[0].count)
 
-  // Only delete if we have more than minimum
   if (totalCount <= MIN_STICKERS) {
     return { deleted: 0 }
   }
 
-  // Delete expired stickers but keep at least MIN_STICKERS
-  const { rowCount } = await sql`
+  const result = await sql`
     DELETE FROM stickers
     WHERE id IN (
       SELECT id FROM stickers
@@ -215,16 +179,16 @@ export async function deleteExpiredStickers(): Promise<{ deleted: number }> {
       LIMIT ${totalCount - MIN_STICKERS}
     )
   `
-  return { deleted: rowCount || 0 }
+  return { deleted: result.length || 0 }
 }
 
-// Get total sticker count
+// Get sticker count
 export async function getStickerCount(): Promise<number> {
-  if (!hasPostgres) {
-    return loadStickers().length
+  if (!hasDatabase) {
+    return memoryStickers.length
   }
 
-  const { sql } = await import('@vercel/postgres')
-  const { rows } = await sql`SELECT COUNT(*) as count FROM stickers`
+  const sql = getSQL()
+  const rows = await sql`SELECT COUNT(*) as count FROM stickers`
   return parseInt(rows[0].count)
 }

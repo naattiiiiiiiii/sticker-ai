@@ -19,6 +19,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@neondatabase/serverless": "^1.0.2",
     "@types/node": "^22.0.0",
     "@types/react": "^18.3.0",
     "@vercel/blob": "^2.0.0",
