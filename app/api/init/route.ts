@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { initDatabase } from '@/lib/db'
 
+export const dynamic = 'force-dynamic'
+
 // Esta ruta inicializa la base de datos (crear tablas)
 // Solo ejecutar una vez después del deploy
 export async function GET(request: NextRequest) {

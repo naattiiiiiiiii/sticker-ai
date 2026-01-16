@@ -5,6 +5,10 @@ import { convertToWebPSticker } from '@/lib/image-utils'
 import { createSticker } from '@/lib/db'
 import { uploadImage, generateFilename } from '@/lib/storage'
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 // Rate limiting simple (en producción usar Vercel KV)
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
 
