@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Wand2, Download, ArrowRight, Sparkles, MessageCircle } from 'lucide-react'
+import { Wand2, Download, Sparkles, MessageCircle, Share2, Check } from 'lucide-react'
 import type { Sticker } from '@/lib/db'
 import { WhatsAppModal } from './WhatsAppModal'
 
@@ -27,6 +27,27 @@ export function StickerGenerator({ onStickerGenerated }: StickerGeneratorProps) 
   const [error, setError] = useState<string | null>(null)
   const [generatedSticker, setGeneratedSticker] = useState<Sticker | null>(null)
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false)
+  const [copied, setCopied] = useState(false)
+
+  const handleShare = async () => {
+    const shareText = '¡Crea stickers únicos para WhatsApp con IA! Gratis y sin registro 🎨✨\n\nhttps://stickerai.is-a.dev'
+
+    try {
+      await navigator.clipboard.writeText(shareText)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea')
+      textArea.value = shareText
+      document.body.appendChild(textArea)
+      textArea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textArea)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -207,6 +228,27 @@ export function StickerGenerator({ onStickerGenerated }: StickerGeneratorProps) 
                   text-[#6b7280] font-light hover:text-[#1a2634] transition-all duration-300"
               >
                 Crear otro
+              </button>
+            </div>
+
+            {/* Share button */}
+            <div className="mt-4 pt-4 border-t border-[#e5e7eb]">
+              <button
+                onClick={handleShare}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-full
+                  text-xs font-light text-[#9ca3af] hover:text-[#1a2634] transition-all duration-300"
+              >
+                {copied ? (
+                  <>
+                    <Check className="w-3 h-3" />
+                    ¡Copiado!
+                  </>
+                ) : (
+                  <>
+                    <Share2 className="w-3 h-3" />
+                    Compartir StickerAI con amigos
+                  </>
+                )}
               </button>
             </div>
           </div>

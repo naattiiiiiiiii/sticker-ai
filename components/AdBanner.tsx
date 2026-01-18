@@ -1,60 +1,47 @@
 'use client'
 
+import { Sparkles } from 'lucide-react'
+
 interface AdBannerProps {
-  slot: string // ID del slot de AdSense
+  slot: string
   format?: 'horizontal' | 'vertical' | 'rectangle'
   className?: string
 }
 
-// En desarrollo mostramos un placeholder
-// En producción se reemplaza con el código real de AdSense
-const isDev = process.env.NODE_ENV === 'development'
+// Set your AdSense Publisher ID here or in NEXT_PUBLIC_ADSENSE_ID env var
+const ADSENSE_PUBLISHER_ID = process.env.NEXT_PUBLIC_ADSENSE_ID || ''
 
-export function AdBanner({ slot, format = 'horizontal', className = '' }: AdBannerProps) {
-  // Dimensiones según formato
-  const dimensions = {
-    horizontal: 'h-[90px] w-full max-w-[728px]', // Leaderboard 728x90
-    vertical: 'w-[160px] h-[600px]', // Wide Skyscraper 160x600
-    rectangle: 'w-[300px] h-[250px]', // Medium Rectangle 300x250
-  }
+export function AdBanner({ format = 'horizontal', className = '' }: AdBannerProps) {
+  // If no AdSense configured, show promotional banner instead
+  if (!ADSENSE_PUBLISHER_ID) {
+    if (format === 'vertical') {
+      // Don't show anything for vertical ads when no AdSense
+      return null
+    }
 
-  if (isDev) {
-    // Placeholder para desarrollo
+    // Show a subtle promotional message
     return (
-      <div
-        className={`${dimensions[format]} ${className}
-          bg-gradient-to-br from-gray-100 to-gray-200
-          border border-dashed border-gray-300 rounded-lg
-          flex items-center justify-center text-gray-400 text-xs
-          mx-auto`}
-      >
-        <div className="text-center">
-          <p className="font-medium">Espacio publicitario</p>
-          <p className="text-[10px] mt-1">
-            {format === 'horizontal' && '728 x 90'}
-            {format === 'vertical' && '160 x 600'}
-            {format === 'rectangle' && '300 x 250'}
+      <div className={`${className} mx-auto max-w-xl`}>
+        <div className="flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-gradient-to-r from-[#faf8f5] to-[#f0ede8] border border-[#e5e7eb]">
+          <Sparkles className="w-4 h-4 text-[#9ca3af]" strokeWidth={1.5} />
+          <p className="text-xs font-light text-[#9ca3af]">
+            Crea stickers gratis con IA en{' '}
+            <span className="text-[#1a2634] font-normal">stickerai.is-a.dev</span>
           </p>
         </div>
       </div>
     )
   }
 
-  // Código real de AdSense para producción
+  // Show real AdSense ads when configured
   return (
     <div className={`${className} mx-auto`}>
       <ins
         className="adsbygoogle"
         style={{ display: 'block' }}
-        data-ad-client="ca-pub-XXXXXXXXXX" // Tu ID de publisher
-        data-ad-slot={slot}
+        data-ad-client={ADSENSE_PUBLISHER_ID}
         data-ad-format="auto"
         data-full-width-responsive="true"
-      />
-      <script
-        dangerouslySetInnerHTML={{
-          __html: '(adsbygoogle = window.adsbygoogle || []).push({});',
-        }}
       />
     </div>
   )
