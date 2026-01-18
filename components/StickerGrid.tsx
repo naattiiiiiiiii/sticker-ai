@@ -92,8 +92,20 @@ export function StickerGrid({ initialStickers = [] }: StickerGridProps) {
     return () => observer.disconnect()
   }, [hasMore, loading, loadMore])
 
-  if (stickers.length === 0 && !loading) {
-    return null
+  if (stickers.length === 0 && !loading && initialLoadDone.current) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-[#9ca3af] text-sm font-light">No hay stickers todavía. ¡Crea el primero!</p>
+      </div>
+    )
+  }
+
+  if (stickers.length === 0 && !initialLoadDone.current) {
+    return (
+      <div className="flex justify-center py-12">
+        <div className="w-6 h-6 border-2 border-[#e5e7eb] border-t-[#1a2634] rounded-full animate-spin" />
+      </div>
+    )
   }
 
   return (
