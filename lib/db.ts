@@ -63,7 +63,10 @@ export async function initDatabase() {
 
 // Obtener stickers recientes
 export async function getRecentStickers(limit = 20, cursor?: string): Promise<Sticker[]> {
+  console.log('[getRecentStickers] hasDatabase:', hasDatabase(), 'limit:', limit)
+
   if (!hasDatabase()) {
+    console.log('[getRecentStickers] Using memory, count:', memoryStickers.length)
     let sorted = [...memoryStickers].sort((a, b) =>
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     )
@@ -74,24 +77,31 @@ export async function getRecentStickers(limit = 20, cursor?: string): Promise<St
     return sorted.slice(0, limit)
   }
 
-  const sql = getSQL()
+  try {
+    const sql = getSQL()
 
-  if (cursor) {
+    if (cursor) {
+      const rows = await sql`
+        SELECT * FROM stickers
+        WHERE created_at < ${cursor}
+        ORDER BY created_at DESC
+        LIMIT ${limit}
+      `
+      console.log('[getRecentStickers] With cursor, found:', rows.length)
+      return rows as Sticker[]
+    }
+
     const rows = await sql`
       SELECT * FROM stickers
-      WHERE created_at < ${cursor}
       ORDER BY created_at DESC
       LIMIT ${limit}
     `
+    console.log('[getRecentStickers] Without cursor, found:', rows.length)
     return rows as Sticker[]
+  } catch (error) {
+    console.error('[getRecentStickers] Error:', error)
+    return []
   }
-
-  const rows = await sql`
-    SELECT * FROM stickers
-    ORDER BY created_at DESC
-    LIMIT ${limit}
-  `
-  return rows as Sticker[]
 }
 
 // Obtener sticker por ID
