@@ -107,7 +107,10 @@ export async function getStickerById(id: string): Promise<Sticker | null> {
 
 // Crear nuevo sticker
 export async function createSticker(prompt: string, imageUrl: string): Promise<Sticker> {
+  console.log('[createSticker] Starting with hasDatabase:', hasDatabase())
+
   if (!hasDatabase()) {
+    console.log('[createSticker] Using in-memory storage')
     const now = new Date()
     const sticker: Sticker = {
       id: generateUUID(),
@@ -121,13 +124,28 @@ export async function createSticker(prompt: string, imageUrl: string): Promise<S
     return sticker
   }
 
-  const sql = getSQL()
-  const rows = await sql`
-    INSERT INTO stickers (prompt, image_url)
-    VALUES (${prompt}, ${imageUrl})
-    RETURNING *
-  `
-  return rows[0] as Sticker
+  try {
+    const sql = getSQL()
+    console.log('[createSticker] Executing INSERT query')
+
+    const rows = await sql`
+      INSERT INTO stickers (prompt, image_url)
+      VALUES (${prompt}, ${imageUrl})
+      RETURNING *
+    `
+
+    console.log('[createSticker] Query result rows:', rows?.length || 0)
+
+    if (!rows || rows.length === 0) {
+      throw new Error('INSERT returned no rows')
+    }
+
+    console.log('[createSticker] Successfully created sticker:', rows[0].id)
+    return rows[0] as Sticker
+  } catch (error) {
+    console.error('[createSticker] Database error:', error)
+    throw error
+  }
 }
 
 // Incrementar descargas
