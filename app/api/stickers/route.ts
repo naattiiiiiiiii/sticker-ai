@@ -16,6 +16,8 @@ export async function GET(request: NextRequest) {
       ? stickers[stickers.length - 1]?.created_at
       : null
 
+    console.log('[stickers] Returning', stickers.length, 'stickers')
+
     return NextResponse.json(
       {
         stickers,
@@ -24,7 +26,7 @@ export async function GET(request: NextRequest) {
       },
       {
         headers: {
-          'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+          'Cache-Control': 'no-store, must-revalidate',
         },
       }
     )
