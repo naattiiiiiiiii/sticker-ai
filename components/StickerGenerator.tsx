@@ -166,19 +166,19 @@ export function StickerGenerator({ onStickerGenerated }: StickerGeneratorProps) 
 
       {/* Modal del sticker generado */}
       {generatedSticker && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setGeneratedSticker(null)}>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => setGeneratedSticker(null)}>
           {/* Backdrop */}
           <div className="absolute inset-0 bg-[#1a2634]/50 backdrop-blur-sm" />
 
           {/* Modal */}
           <div
-            className="relative bg-[#faf8f5] rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl animate-fade-in"
+            className="relative bg-[#faf8f5] rounded-t-3xl sm:rounded-3xl p-5 sm:p-8 w-full sm:max-w-sm shadow-2xl animate-fade-in max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Preview */}
-            <div className="flex justify-center mb-6">
+            <div className="flex justify-center mb-4 sm:mb-6">
               <div
-                className="w-44 h-44 sm:w-52 sm:h-52 rounded-2xl overflow-hidden"
+                className="w-36 h-36 xs:w-44 xs:h-44 sm:w-52 sm:h-52 rounded-2xl overflow-hidden"
                 style={{
                   backgroundImage: 'linear-gradient(45deg, #e8e8e8 25%, transparent 25%), linear-gradient(-45deg, #e8e8e8 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e8e8e8 75%), linear-gradient(-45deg, transparent 75%, #e8e8e8 75%)',
                   backgroundSize: '12px 12px',
@@ -195,7 +195,7 @@ export function StickerGenerator({ onStickerGenerated }: StickerGeneratorProps) 
             </div>
 
             {/* Prompt */}
-            <p className="text-center text-sm font-light text-[#6b7280] mb-6">
+            <p className="text-center text-xs sm:text-sm font-light text-[#6b7280] mb-4 sm:mb-6 line-clamp-2">
               &ldquo;{generatedSticker.prompt}&rdquo;
             </p>
 

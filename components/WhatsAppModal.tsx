@@ -56,13 +56,13 @@ export function WhatsAppModal({ sticker, onClose, onCreateAnother }: WhatsAppMod
   })
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={onClose}>
       {/* Backdrop */}
       <div className="absolute inset-0 bg-[#1a2634]/60 backdrop-blur-sm" />
 
       {/* Modal - Product Page Style */}
       <div
-        className="relative bg-white rounded-3xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl animate-fade-in"
+        className="relative bg-white rounded-t-3xl sm:rounded-3xl w-full sm:max-w-3xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto shadow-2xl animate-fade-in"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close button */}
@@ -76,9 +76,9 @@ export function WhatsAppModal({ sticker, onClose, onCreateAnother }: WhatsAppMod
 
         <div className="flex flex-col md:flex-row">
           {/* Left: Sticker Preview */}
-          <div className="flex-1 p-6 sm:p-8 flex items-center justify-center bg-[#faf8f5]">
+          <div className="flex-1 p-4 sm:p-8 flex items-center justify-center bg-[#faf8f5]">
             <div
-              className="w-64 h-64 sm:w-72 sm:h-72 rounded-3xl overflow-hidden shadow-lg"
+              className="w-48 h-48 xs:w-56 xs:h-56 sm:w-72 sm:h-72 rounded-3xl overflow-hidden shadow-lg"
               style={checkeredBg}
             >
               <img
@@ -90,7 +90,7 @@ export function WhatsAppModal({ sticker, onClose, onCreateAnother }: WhatsAppMod
           </div>
 
           {/* Right: Product Details */}
-          <div className="flex-1 p-6 sm:p-8 flex flex-col">
+          <div className="flex-1 p-4 sm:p-8 flex flex-col">
             {/* Badge */}
             <div className="flex items-center gap-2 mb-4">
               <span className="px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">
@@ -102,7 +102,7 @@ export function WhatsAppModal({ sticker, onClose, onCreateAnother }: WhatsAppMod
             </div>
 
             {/* Title/Prompt */}
-            <h2 className="text-xl sm:text-2xl font-medium text-[#1a2634] mb-2 leading-tight">
+            <h2 className="text-lg sm:text-2xl font-medium text-[#1a2634] mb-2 leading-tight line-clamp-2">
               {sticker.prompt}
             </h2>
 
