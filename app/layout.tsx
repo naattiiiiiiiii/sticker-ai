@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     description: 'Crea stickers únicos con IA. Gratis y sin registro.',
   },
   alternates: {
-    canonical: 'https://sticker-ai.is-a.dev',
+    canonical: 'https://sticker-ai-natalia-s-projects-29dfd446.vercel.app',
   },
 }
 

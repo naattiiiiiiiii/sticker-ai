@@ -1,9 +1,11 @@
-// Check if we have Vercel Blob configured
-const hasBlobStorage = process.env.BLOB_READ_WRITE_TOKEN !== undefined
+// Check if we have Vercel Blob configured - dynamic check
+function hasBlobStorage(): boolean {
+  return !!process.env.BLOB_READ_WRITE_TOKEN
+}
 
 // Subir imagen al blob storage
 export async function uploadImage(buffer: Buffer, filename: string): Promise<string> {
-  if (!hasBlobStorage) {
+  if (!hasBlobStorage()) {
     // No blob storage: return as base64 data URL
     const base64 = buffer.toString('base64')
     return `data:image/webp;base64,${base64}`
@@ -22,7 +24,7 @@ export async function uploadImage(buffer: Buffer, filename: string): Promise<str
 
 // Eliminar imagen del blob storage
 export async function deleteImage(url: string): Promise<void> {
-  if (!hasBlobStorage || url.startsWith('data:')) {
+  if (!hasBlobStorage() || url.startsWith('data:')) {
     // No blob storage or data URL: nothing to delete
     return
   }

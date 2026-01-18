@@ -10,15 +10,18 @@ export interface Sticker {
   expires_at: string
 }
 
-// Check if we have Neon configured
-const hasDatabase = process.env.DATABASE_URL !== undefined
-
-// Get SQL client
+// Get SQL client - check dynamically at runtime
 function getSQL() {
-  if (!hasDatabase) {
+  const databaseUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL
+  if (!databaseUrl) {
     throw new Error('DATABASE_URL not configured')
   }
-  return neon(process.env.DATABASE_URL!)
+  return neon(databaseUrl)
+}
+
+// Check if database is configured - dynamic check
+function hasDatabase(): boolean {
+  return !!(process.env.DATABASE_URL || process.env.POSTGRES_URL)
 }
 
 // In-memory fallback when no database
@@ -35,7 +38,7 @@ function generateUUID(): string {
 
 // Crear tabla si no existe
 export async function initDatabase() {
-  if (!hasDatabase) {
+  if (!hasDatabase()) {
     console.log('No database configured: using in-memory storage')
     return
   }
@@ -60,7 +63,7 @@ export async function initDatabase() {
 
 // Obtener stickers recientes
 export async function getRecentStickers(limit = 20, cursor?: string): Promise<Sticker[]> {
-  if (!hasDatabase) {
+  if (!hasDatabase()) {
     let sorted = [...memoryStickers].sort((a, b) =>
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     )
@@ -93,7 +96,7 @@ export async function getRecentStickers(limit = 20, cursor?: string): Promise<St
 
 // Obtener sticker por ID
 export async function getStickerById(id: string): Promise<Sticker | null> {
-  if (!hasDatabase) {
+  if (!hasDatabase()) {
     return memoryStickers.find(s => s.id === id) || null
   }
 
@@ -104,7 +107,7 @@ export async function getStickerById(id: string): Promise<Sticker | null> {
 
 // Crear nuevo sticker
 export async function createSticker(prompt: string, imageUrl: string): Promise<Sticker> {
-  if (!hasDatabase) {
+  if (!hasDatabase()) {
     const now = new Date()
     const sticker: Sticker = {
       id: generateUUID(),
@@ -129,7 +132,7 @@ export async function createSticker(prompt: string, imageUrl: string): Promise<S
 
 // Incrementar descargas
 export async function incrementDownloads(id: string): Promise<void> {
-  if (!hasDatabase) {
+  if (!hasDatabase()) {
     const sticker = memoryStickers.find(s => s.id === id)
     if (sticker) sticker.downloads++
     return
@@ -144,7 +147,7 @@ const MIN_STICKERS = 40
 
 // Eliminar stickers expirados
 export async function deleteExpiredStickers(): Promise<{ deleted: number }> {
-  if (!hasDatabase) {
+  if (!hasDatabase()) {
     const now = new Date()
     const sorted = [...memoryStickers].sort((a, b) =>
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -184,7 +187,7 @@ export async function deleteExpiredStickers(): Promise<{ deleted: number }> {
 
 // Get sticker count
 export async function getStickerCount(): Promise<number> {
-  if (!hasDatabase) {
+  if (!hasDatabase()) {
     return memoryStickers.length
   }
 
