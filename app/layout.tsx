@@ -9,6 +9,9 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
+  other: {
+    'google-adsense-account': 'ca-pub-3128901609046162',
+  },
   title: 'StickerAI - Crea Stickers para WhatsApp con IA Gratis',
   description: 'Genera stickers personalizados para WhatsApp con inteligencia artificial. 100% gratis, sin registro, sin límites. Describe tu idea y descarga tu sticker en segundos.',
   keywords: ['stickers whatsapp', 'crear stickers', 'stickers ia', 'stickers gratis', 'generador stickers', 'whatsapp stickers', 'ai sticker maker', 'stickers personalizados'],
