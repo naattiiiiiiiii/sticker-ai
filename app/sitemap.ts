@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://sticker-ai.is-a.dev'
+  const baseUrl = 'https://sticker-ai-natalia-s-projects-29dfd446.vercel.app'
 
   return [
     {
