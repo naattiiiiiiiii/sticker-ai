@@ -3,7 +3,7 @@ User-agent: *
 Allow: /
 
 # Sitemap
-Sitemap: https://sticker-ai.is-a.dev/sitemap.xml
+Sitemap: https://sticker-ai-natalia-s-projects-29dfd446.vercel.app/sitemap.xml
 
 # Disallow API routes from indexing
 Disallow: /api/
