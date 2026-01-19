@@ -10,6 +10,9 @@ interface StickerGridProps {
   initialStickers?: Sticker[]
 }
 
+// Store newly generated stickers outside component to survive remounts
+const newlyGeneratedStickers: Sticker[] = []
+
 export function StickerGrid({ initialStickers = [] }: StickerGridProps) {
   const [stickers, setStickers] = useState<Sticker[]>(initialStickers)
   const [loading, setLoading] = useState(false)
@@ -21,15 +24,34 @@ export function StickerGrid({ initialStickers = [] }: StickerGridProps) {
   // Listen for new sticker events
   useEffect(() => {
     const handleNewSticker = (event: CustomEvent<Sticker>) => {
+      const newSticker = event.detail
+      if (!newSticker) return
+
+      // Store in module-level array to survive remounts
+      if (!newlyGeneratedStickers.some(s => s.id === newSticker.id)) {
+        newlyGeneratedStickers.unshift(newSticker)
+      }
+
+      // Update state
       setStickers(prev => {
-        // Add new sticker at the beginning if not already present
-        if (prev.some(s => s.id === event.detail.id)) return prev
-        return [event.detail, ...prev]
+        if (prev.some(s => s.id === newSticker.id)) return prev
+        return [newSticker, ...prev]
       })
     }
 
     window.addEventListener('newSticker', handleNewSticker as EventListener)
     return () => window.removeEventListener('newSticker', handleNewSticker as EventListener)
+  }, [])
+
+  // Merge newly generated stickers on mount
+  useEffect(() => {
+    if (newlyGeneratedStickers.length > 0) {
+      setStickers(prev => {
+        const existingIds = new Set(prev.map(s => s.id))
+        const toAdd = newlyGeneratedStickers.filter(s => !existingIds.has(s.id))
+        return [...toAdd, ...prev]
+      })
+    }
   }, [])
 
   const loadMore = useCallback(async () => {
@@ -55,10 +77,17 @@ export function StickerGrid({ initialStickers = [] }: StickerGridProps) {
 
       // Use functional update to avoid stale closures
       setStickers((prev) => {
-        // Filter out duplicates by ID
-        const existingIds = new Set(prev.map(s => s.id))
-        const newStickers = data.stickers.filter((s: Sticker) => !existingIds.has(s.id))
-        return [...prev, ...newStickers]
+        // Combine: newly generated (module-level) + previous + new from API
+        const allStickers = [...newlyGeneratedStickers, ...prev]
+        const existingIds = new Set(allStickers.map(s => s.id))
+        const fromApi = data.stickers.filter((s: Sticker) => !existingIds.has(s.id))
+
+        // Deduplicate and sort by date
+        const combined = [...allStickers, ...fromApi]
+        const unique = combined.filter((s, i, arr) => arr.findIndex(x => x.id === s.id) === i)
+        return unique.sort((a, b) =>
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        )
       })
       setCursor(data.nextCursor)
       setHasMore(data.hasMore)
