@@ -76,20 +76,39 @@ export async function initDatabase() {
   await sql`
     CREATE INDEX IF NOT EXISTS idx_stickers_created_at ON stickers(created_at DESC)
   `
+
+  // Índice compuesto para pagination sin duplicados
+  await sql`
+    CREATE INDEX IF NOT EXISTS idx_stickers_cursor ON stickers(created_at DESC, id DESC)
+  `
 }
 
-// Obtener stickers recientes
+// Parse cursor compuesto (formato: created_at|id)
+function parseCursor(cursor: string): { created_at: string; id: string } | null {
+  const parts = cursor.split('|')
+  if (parts.length !== 2) return null
+  return { created_at: parts[0], id: parts[1] }
+}
+
+// Obtener stickers recientes con cursor compuesto para evitar duplicados
 export async function getRecentStickers(limit = 20, cursor?: string): Promise<Sticker[]> {
   log('[getRecentStickers] hasDatabase:', hasDatabase(), 'limit:', limit)
 
   if (!hasDatabase()) {
     log('[getRecentStickers] Using memory, count:', memoryStickers.length)
-    let sorted = [...memoryStickers].sort((a, b) =>
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    )
+    let sorted = [...memoryStickers].sort((a, b) => {
+      const dateCompare = new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      if (dateCompare !== 0) return dateCompare
+      return b.id.localeCompare(a.id) // Secundario por ID
+    })
     if (cursor) {
-      const idx = sorted.findIndex(s => s.created_at === cursor)
-      if (idx !== -1) sorted = sorted.slice(idx + 1)
+      const parsed = parseCursor(cursor)
+      if (parsed) {
+        const idx = sorted.findIndex(s =>
+          s.created_at === parsed.created_at && s.id === parsed.id
+        )
+        if (idx !== -1) sorted = sorted.slice(idx + 1)
+      }
     }
     return sorted.slice(0, limit)
   }
@@ -97,19 +116,23 @@ export async function getRecentStickers(limit = 20, cursor?: string): Promise<St
   const sql = getSQL()
 
   if (cursor) {
-    const rows = await sql`
-      SELECT * FROM stickers
-      WHERE created_at < ${cursor}
-      ORDER BY created_at DESC
-      LIMIT ${limit}
-    `
-    log('[getRecentStickers] With cursor, found:', rows.length)
-    return rows as Sticker[]
+    const parsed = parseCursor(cursor)
+    if (parsed) {
+      // Cursor compuesto: (created_at, id) para evitar duplicados
+      const rows = await sql`
+        SELECT * FROM stickers
+        WHERE (created_at, id) < (${parsed.created_at}::timestamptz, ${parsed.id}::uuid)
+        ORDER BY created_at DESC, id DESC
+        LIMIT ${limit}
+      `
+      log('[getRecentStickers] With cursor, found:', rows.length)
+      return rows as Sticker[]
+    }
   }
 
   const rows = await sql`
     SELECT * FROM stickers
-    ORDER BY created_at DESC
+    ORDER BY created_at DESC, id DESC
     LIMIT ${limit}
   `
   log('[getRecentStickers] Without cursor, found:', rows.length)
