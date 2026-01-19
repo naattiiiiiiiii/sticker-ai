@@ -4,6 +4,7 @@ import { generateImage } from '@/lib/pollinations'
 import { convertToWebPSticker } from '@/lib/image-utils'
 import { createSticker, getStickerCount } from '@/lib/db'
 import { uploadImage, generateFilename } from '@/lib/storage'
+import { verifyAuth } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -69,12 +70,12 @@ const SEED_PROMPTS = [
 
 export async function POST(request: NextRequest) {
   try {
-    // Check authorization (simple secret for now)
+    // Check authorization - SEED_SECRET must be configured
     const authHeader = request.headers.get('authorization')
-    const expectedSecret = process.env.SEED_SECRET || 'seed-stickers-secret'
+    const auth = verifyAuth(authHeader, 'SEED_SECRET', 'SEED_SECRET')
 
-    if (authHeader !== `Bearer ${expectedSecret}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status })
     }
 
     // Get current count
@@ -131,8 +132,15 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// GET to check status
-export async function GET() {
+// GET to check status - protected
+export async function GET(request: NextRequest) {
+  const authHeader = request.headers.get('authorization')
+  const auth = verifyAuth(authHeader, 'SEED_SECRET', 'SEED_SECRET')
+
+  if (!auth.authorized) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status })
+  }
+
   const count = await getStickerCount()
   return NextResponse.json({
     currentCount: count,

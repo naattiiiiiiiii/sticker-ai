@@ -91,11 +91,9 @@ export async function POST(request: NextRequest) {
 
     // Subir a Vercel Blob
     const imageUrl = await uploadImage(webpBuffer, filename)
-    console.log('[generate] Image uploaded:', imageUrl.substring(0, 50) + '...')
 
     // Guardar en base de datos
     const sticker = await createSticker(prompt, imageUrl)
-    console.log('[generate] Sticker saved with ID:', sticker.id)
 
     return NextResponse.json(
       {

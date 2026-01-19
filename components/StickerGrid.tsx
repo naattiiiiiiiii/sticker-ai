@@ -46,6 +46,10 @@ export function StickerGrid({ initialStickers = [] }: StickerGridProps) {
       const data = await response.json()
 
       if (!response.ok) {
+        // Handle specific error codes
+        if (data.code === 'DB_ERROR' || data.code === 'SERVICE_UNAVAILABLE') {
+          throw new Error('El servicio está temporalmente no disponible. Intenta de nuevo en unos segundos.')
+        }
         throw new Error(data.error || 'Error cargando stickers')
       }
 
@@ -59,7 +63,10 @@ export function StickerGrid({ initialStickers = [] }: StickerGridProps) {
       setCursor(data.nextCursor)
       setHasMore(data.hasMore)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error cargando stickers')
+      const message = err instanceof Error ? err.message : 'Error cargando stickers'
+      setError(message)
+      // Log error for debugging but don't expose internals to user
+      console.error('[StickerGrid] Load error:', err)
     } finally {
       setLoading(false)
     }
