@@ -11,12 +11,17 @@ function parseLimit(value: string | null): number {
   return Math.min(parsed, 50)
 }
 
-// Validate cursor format (ISO date string)
+// Validate cursor format (created_at|id)
 function isValidCursor(cursor: string | null): cursor is string {
   if (!cursor) return false
-  // Basic ISO date validation
-  const date = new Date(cursor)
-  return !isNaN(date.getTime())
+  const parts = cursor.split('|')
+  if (parts.length !== 2) return false
+  // Validate date part
+  const date = new Date(parts[0])
+  if (isNaN(date.getTime())) return false
+  // Validate UUID part (basic check)
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+  return uuidRegex.test(parts[1])
 }
 
 export async function GET(request: NextRequest) {
@@ -28,9 +33,10 @@ export async function GET(request: NextRequest) {
 
     const stickers = await getRecentStickers(limit, cursor)
 
-    // Cursor para la siguiente página
-    const nextCursor = stickers.length === limit
-      ? stickers[stickers.length - 1]?.created_at
+    // Cursor compuesto para la siguiente página (created_at|id)
+    const lastSticker = stickers[stickers.length - 1]
+    const nextCursor = stickers.length === limit && lastSticker
+      ? `${lastSticker.created_at}|${lastSticker.id}`
       : null
 
     return NextResponse.json(

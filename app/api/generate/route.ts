@@ -9,27 +9,53 @@ import { uploadImage, generateFilename } from '@/lib/storage'
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
-// Rate limiting simple (en producción usar Vercel KV)
+// Rate limiting con limpieza automática
+const WINDOW_MS = 10 * 60 * 1000 // 10 minutos
+const MAX_REQUESTS = 5
+const MAX_MAP_SIZE = 10000 // Límite para evitar memory leaks
+const CLEANUP_INTERVAL = 5 * 60 * 1000 // Limpiar cada 5 minutos
+
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
+let lastCleanup = Date.now()
+
+function cleanupExpiredEntries() {
+  const now = Date.now()
+  // Solo limpiar si pasaron 5 minutos desde última limpieza
+  if (now - lastCleanup < CLEANUP_INTERVAL) return
+
+  lastCleanup = now
+  const entries = Array.from(rateLimitMap.entries())
+  for (const [ip, entry] of entries) {
+    if (now > entry.resetTime) {
+      rateLimitMap.delete(ip)
+    }
+  }
+}
 
 function checkRateLimit(ip: string): { allowed: boolean; remaining: number } {
   const now = Date.now()
-  const windowMs = 10 * 60 * 1000 // 10 minutos
-  const maxRequests = 5
+
+  // Limpieza periódica
+  cleanupExpiredEntries()
+
+  // Protección contra memory leak: si el map es muy grande, limpiar todo
+  if (rateLimitMap.size > MAX_MAP_SIZE) {
+    rateLimitMap.clear()
+  }
 
   const entry = rateLimitMap.get(ip)
 
   if (!entry || now > entry.resetTime) {
-    rateLimitMap.set(ip, { count: 1, resetTime: now + windowMs })
-    return { allowed: true, remaining: maxRequests - 1 }
+    rateLimitMap.set(ip, { count: 1, resetTime: now + WINDOW_MS })
+    return { allowed: true, remaining: MAX_REQUESTS - 1 }
   }
 
-  if (entry.count >= maxRequests) {
+  if (entry.count >= MAX_REQUESTS) {
     return { allowed: false, remaining: 0 }
   }
 
   entry.count++
-  return { allowed: true, remaining: maxRequests - entry.count }
+  return { allowed: true, remaining: MAX_REQUESTS - entry.count }
 }
 
 export async function POST(request: NextRequest) {
