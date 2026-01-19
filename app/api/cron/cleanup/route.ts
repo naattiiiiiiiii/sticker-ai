@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { deleteExpiredStickers } from '@/lib/db'
+import { verifyAuth } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -7,13 +8,12 @@ export async function GET(request: NextRequest) {
   try {
     // Verificar autorización del cron job
     const authHeader = request.headers.get('authorization')
-    const cronSecret = process.env.CRON_SECRET
+    const auth = verifyAuth(authHeader, 'CRON_SECRET', 'CRON_SECRET')
 
-    // En Vercel, los cron jobs incluyen este header automáticamente
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    if (!auth.authorized) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
+        { error: auth.error },
+        { status: auth.status }
       )
     }
 

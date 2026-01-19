@@ -10,6 +10,23 @@ export interface Sticker {
   expires_at: string
 }
 
+// Custom error for database issues
+export class DatabaseError extends Error {
+  constructor(message: string, public readonly cause?: unknown) {
+    super(message)
+    this.name = 'DatabaseError'
+  }
+}
+
+// Check if verbose logging is enabled (only in development)
+const isVerbose = process.env.NODE_ENV !== 'production'
+
+function log(...args: unknown[]) {
+  if (isVerbose) {
+    console.log(...args)
+  }
+}
+
 // Get SQL client - check dynamically at runtime
 function getSQL() {
   const databaseUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL
@@ -39,7 +56,7 @@ function generateUUID(): string {
 // Crear tabla si no existe
 export async function initDatabase() {
   if (!hasDatabase()) {
-    console.log('No database configured: using in-memory storage')
+    log('[initDatabase] No database configured: using in-memory storage')
     return
   }
 
@@ -63,10 +80,10 @@ export async function initDatabase() {
 
 // Obtener stickers recientes
 export async function getRecentStickers(limit = 20, cursor?: string): Promise<Sticker[]> {
-  console.log('[getRecentStickers] hasDatabase:', hasDatabase(), 'limit:', limit)
+  log('[getRecentStickers] hasDatabase:', hasDatabase(), 'limit:', limit)
 
   if (!hasDatabase()) {
-    console.log('[getRecentStickers] Using memory, count:', memoryStickers.length)
+    log('[getRecentStickers] Using memory, count:', memoryStickers.length)
     let sorted = [...memoryStickers].sort((a, b) =>
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     )
@@ -77,31 +94,26 @@ export async function getRecentStickers(limit = 20, cursor?: string): Promise<St
     return sorted.slice(0, limit)
   }
 
-  try {
-    const sql = getSQL()
+  const sql = getSQL()
 
-    if (cursor) {
-      const rows = await sql`
-        SELECT * FROM stickers
-        WHERE created_at < ${cursor}
-        ORDER BY created_at DESC
-        LIMIT ${limit}
-      `
-      console.log('[getRecentStickers] With cursor, found:', rows.length)
-      return rows as Sticker[]
-    }
-
+  if (cursor) {
     const rows = await sql`
       SELECT * FROM stickers
+      WHERE created_at < ${cursor}
       ORDER BY created_at DESC
       LIMIT ${limit}
     `
-    console.log('[getRecentStickers] Without cursor, found:', rows.length)
+    log('[getRecentStickers] With cursor, found:', rows.length)
     return rows as Sticker[]
-  } catch (error) {
-    console.error('[getRecentStickers] Error:', error)
-    return []
   }
+
+  const rows = await sql`
+    SELECT * FROM stickers
+    ORDER BY created_at DESC
+    LIMIT ${limit}
+  `
+  log('[getRecentStickers] Without cursor, found:', rows.length)
+  return rows as Sticker[]
 }
 
 // Obtener sticker por ID
@@ -117,10 +129,10 @@ export async function getStickerById(id: string): Promise<Sticker | null> {
 
 // Crear nuevo sticker
 export async function createSticker(prompt: string, imageUrl: string): Promise<Sticker> {
-  console.log('[createSticker] Starting with hasDatabase:', hasDatabase())
+  log('[createSticker] Starting with hasDatabase:', hasDatabase())
 
   if (!hasDatabase()) {
-    console.log('[createSticker] Using in-memory storage')
+    log('[createSticker] Using in-memory storage')
     const now = new Date()
     const sticker: Sticker = {
       id: generateUUID(),
@@ -134,28 +146,23 @@ export async function createSticker(prompt: string, imageUrl: string): Promise<S
     return sticker
   }
 
-  try {
-    const sql = getSQL()
-    console.log('[createSticker] Executing INSERT query')
+  const sql = getSQL()
+  log('[createSticker] Executing INSERT query')
 
-    const rows = await sql`
-      INSERT INTO stickers (prompt, image_url)
-      VALUES (${prompt}, ${imageUrl})
-      RETURNING *
-    `
+  const rows = await sql`
+    INSERT INTO stickers (prompt, image_url)
+    VALUES (${prompt}, ${imageUrl})
+    RETURNING *
+  `
 
-    console.log('[createSticker] Query result rows:', rows?.length || 0)
+  log('[createSticker] Query result rows:', rows?.length || 0)
 
-    if (!rows || rows.length === 0) {
-      throw new Error('INSERT returned no rows')
-    }
-
-    console.log('[createSticker] Successfully created sticker:', rows[0].id)
-    return rows[0] as Sticker
-  } catch (error) {
-    console.error('[createSticker] Database error:', error)
-    throw error
+  if (!rows || rows.length === 0) {
+    throw new DatabaseError('INSERT returned no rows')
   }
+
+  log('[createSticker] Successfully created sticker:', rows[0].id)
+  return rows[0] as Sticker
 }
 
 // Incrementar descargas

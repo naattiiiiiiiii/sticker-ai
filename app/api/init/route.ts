@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { initDatabase } from '@/lib/db'
+import { verifyAuth } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -9,12 +10,12 @@ export async function GET(request: NextRequest) {
   try {
     // Verificar autorización (solo admin puede inicializar)
     const authHeader = request.headers.get('authorization')
-    const cronSecret = process.env.CRON_SECRET
+    const auth = verifyAuth(authHeader, 'CRON_SECRET', 'CRON_SECRET')
 
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    if (!auth.authorized) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
+        { error: auth.error },
+        { status: auth.status }
       )
     }
 
@@ -28,7 +29,7 @@ export async function GET(request: NextRequest) {
     console.error('Error initializing database:', error)
 
     return NextResponse.json(
-      { error: 'Error initializing database', details: String(error) },
+      { error: 'Error initializing database' },
       { status: 500 }
     )
   }
