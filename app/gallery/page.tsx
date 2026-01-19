@@ -1,4 +1,5 @@
 import { StickerGrid } from '@/components/StickerGrid'
+import { Footer } from '@/components/Footer'
 import { Sparkles, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import type { Metadata } from 'next'
@@ -52,20 +53,7 @@ export default function GalleryPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="px-6 sm:px-8 lg:px-16 py-8 border-t border-[#e5e7eb]">
-        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-[#9ca3af]" strokeWidth={1.5} />
-            <span className="text-sm font-light text-[#9ca3af]">
-              StickerAI
-            </span>
-          </div>
-          <p className="text-xs font-light text-[#9ca3af] text-center sm:text-right">
-            Los stickers se eliminan después de 30 días. Sin datos personales.
-          </p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   )
 }

@@ -1,6 +1,7 @@
 import { StickerGenerator } from '@/components/StickerGenerator'
 import { StickerGrid } from '@/components/StickerGrid'
 import { AdBanner } from '@/components/AdBanner'
+import { Footer } from '@/components/Footer'
 import { Sparkles, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 
@@ -109,18 +110,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="px-4 sm:px-6 lg:px-12 py-6 border-t border-[#e5e7eb]">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-[#9ca3af]" strokeWidth={1.5} />
-            <span className="text-sm font-light text-[#9ca3af]">StickerAI</span>
-          </div>
-          <p className="text-[10px] sm:text-xs font-light text-[#9ca3af]">
-            Gratis · Sin registro · Sin límites
-          </p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   )
 }
