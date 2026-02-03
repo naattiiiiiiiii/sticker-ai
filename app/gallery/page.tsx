@@ -88,7 +88,7 @@ export default function GalleryPage() {
       </section>
 
       {/* Ad Banner - After editorial content */}
-      <section className="px-4 sm:px-6 lg:px-12 pb-6">
+      <section className="px-4 sm:px-6 lg:px-12">
         <div className="max-w-5xl mx-auto">
           <AdBanner slot="1234567890" format="horizontal" />
         </div>

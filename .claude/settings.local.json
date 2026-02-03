@@ -6,7 +6,20 @@
       "Bash(git push:*)",
       "Bash(gh repo fork:*)",
       "Bash(gh pr create:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(xargs cat:*)",
+      "Bash(git -C /Users/nataliacuadrado/sticker-ai ls-files:*)",
+      "Bash(npm run build)",
+      "Bash(xargs ls:*)",
+      "Bash(git rm:*)",
+      "Bash(gh pr view:*)",
+      "Bash(dig:*)",
+      "Bash(gh repo view:*)",
+      "Bash(git remote add:*)",
+      "Bash(git fetch:*)",
+      "Bash(gh auth status:*)",
+      "Bash(gh api:*)",
+      "Bash(gh repo sync:*)"
     ]
   }
 }

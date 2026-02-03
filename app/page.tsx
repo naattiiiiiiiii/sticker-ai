@@ -155,12 +155,12 @@ export default function Home() {
       </section>
 
       {/* Ad Banner - After editorial content */}
-      <section className="px-4 sm:px-6 lg:px-12 py-4">
+      <section className="px-4 sm:px-6 lg:px-12">
         <AdBanner slot="1234567890" format="horizontal" />
       </section>
 
       {/* FAQ Section - More Editorial Content */}
-      <section className="px-4 sm:px-6 lg:px-12 py-8 sm:py-10 bg-white/50">
+      <section className="px-4 sm:px-6 lg:px-12 py-8 sm:py-10">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-6 sm:mb-8">
             <p className="text-xs sm:text-sm font-light tracking-[0.15em] uppercase text-[#9ca3af] mb-1">
@@ -215,7 +215,7 @@ export default function Home() {
       </section>
 
       {/* Second Ad Banner - After FAQ content */}
-      <section className="px-4 sm:px-6 lg:px-12 py-4 sm:py-6">
+      <section className="px-4 sm:px-6 lg:px-12 pb-4">
         <AdBanner slot="0987654321" format="horizontal" />
       </section>
 
