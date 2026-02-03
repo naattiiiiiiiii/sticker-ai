@@ -1,4 +1,5 @@
 import { StickerGrid } from '@/components/StickerGrid'
+import { AdBanner } from '@/components/AdBanner'
 import { Footer } from '@/components/Footer'
 import { Sparkles, ArrowLeft, Smartphone, Share2, Heart } from 'lucide-react'
 import Link from 'next/link'
@@ -77,6 +78,13 @@ export default function GalleryPage() {
         </div>
       </section>
 
+      {/* Ad Banner */}
+      <section className="px-4 sm:px-6 lg:px-12 pb-4">
+        <div className="max-w-5xl mx-auto">
+          <AdBanner slot="1234567890" format="horizontal" />
+        </div>
+      </section>
+
       {/* Grid */}
       <section className="px-4 sm:px-6 lg:px-12 pb-6">
         <div className="max-w-5xl mx-auto">
@@ -120,6 +128,13 @@ export default function GalleryPage() {
               Crear mi propio sticker
             </Link>
           </div>
+        </div>
+      </section>
+
+      {/* Ad Banner */}
+      <section className="px-4 sm:px-6 lg:px-12 pb-6">
+        <div className="max-w-3xl mx-auto">
+          <AdBanner slot="0987654321" format="horizontal" />
         </div>
       </section>
 

@@ -1,13 +1,11 @@
 import { StickerGenerator } from '@/components/StickerGenerator'
 import { StickerGrid } from '@/components/StickerGrid'
+import { AdBanner } from '@/components/AdBanner'
 import { Footer } from '@/components/Footer'
 import { Sparkles, ArrowRight, Download, MessageCircle, Palette, Zap } from 'lucide-react'
 import Link from 'next/link'
 
 export const revalidate = 60
-
-// Set to true when AdSense is approved
-const ADSENSE_ENABLED = false
 
 export default function Home() {
   return (
@@ -154,6 +152,13 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Ad Banner */}
+      <section className="px-4 sm:px-6 lg:px-12 py-4">
+        <div className="max-w-4xl mx-auto">
+          <AdBanner slot="1234567890" format="horizontal" />
+        </div>
+      </section>
+
       {/* Divider */}
       <div className="px-4 sm:px-6 lg:px-12">
         <div className="max-w-5xl mx-auto h-px bg-gradient-to-r from-transparent via-[#e5e7eb] to-transparent" />
@@ -211,6 +216,13 @@ export default function Home() {
               </p>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Ad Banner */}
+      <section className="px-4 sm:px-6 lg:px-12 pb-6">
+        <div className="max-w-3xl mx-auto">
+          <AdBanner slot="0987654321" format="horizontal" />
         </div>
       </section>
 
