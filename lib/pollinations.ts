@@ -20,7 +20,7 @@ export async function generateImage(
     height = 512,
     seed = Math.floor(Math.random() * 1000000),
     nologo = true,
-    model = 'flux', // Modelo por defecto
+    model = 'turbo', // Modelo por defecto (flux ya no disponible)
   } = options
 
   // Construir URL con parámetros
@@ -76,7 +76,7 @@ export function getPollinationsUrl(
     height = 512,
     seed = Math.floor(Math.random() * 1000000),
     nologo = true,
-    model = 'flux',
+    model = 'turbo',
   } = options
 
   const encodedPrompt = encodeURIComponent(prompt)
