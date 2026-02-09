@@ -143,6 +143,27 @@ export async function POST(request: NextRequest) {
     // More specific error messages
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
 
+    if (errorMessage.includes('POLLINATIONS_API_KEY no está configurada')) {
+      return NextResponse.json(
+        { error: 'Servicio de generación no disponible. Contacta al administrador.' },
+        { status: 503 }
+      )
+    }
+
+    if (errorMessage.includes('Sin créditos')) {
+      return NextResponse.json(
+        { error: 'Servicio de generación temporalmente no disponible. Intenta más tarde.' },
+        { status: 503 }
+      )
+    }
+
+    if (errorMessage.includes('API key de Pollinations inválida')) {
+      return NextResponse.json(
+        { error: 'Servicio de generación no disponible. Contacta al administrador.' },
+        { status: 503 }
+      )
+    }
+
     if (errorMessage.includes('fetch') || errorMessage.includes('network')) {
       return NextResponse.json(
         { error: 'Error de conexión con el servicio de IA. Intenta de nuevo.' },

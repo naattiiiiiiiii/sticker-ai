@@ -18,9 +18,9 @@ export function middleware(request: NextRequest) {
     "default-src 'self'; " +
     "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://pagead2.googlesyndication.com https://www.googletagservices.com; " +
     "style-src 'self' 'unsafe-inline'; " +
-    "img-src 'self' data: blob: https://*.vercel-storage.com https://image.pollinations.ai https://pagead2.googlesyndication.com; " +
+    "img-src 'self' data: blob: https://*.vercel-storage.com https://gen.pollinations.ai https://pagead2.googlesyndication.com; " +
     "font-src 'self'; " +
-    "connect-src 'self' https://*.vercel-storage.com https://image.pollinations.ai https://pagead2.googlesyndication.com; " +
+    "connect-src 'self' https://*.vercel-storage.com https://gen.pollinations.ai https://pagead2.googlesyndication.com; " +
     "frame-src https://googleads.g.doubleclick.net https://pagead2.googlesyndication.com;"
   )
 
